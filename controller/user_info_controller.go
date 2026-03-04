@@ -50,3 +50,15 @@ func Register(c *gin.Context) {
 	message, registerRespond, ret := userInfoService.Register(req)
 	JsonBack(c, message, ret, registerRespond)
 }
+
+// SmsLogin 验证码登录
+func SmsLogin(c *gin.Context) {
+	var req request.SmsLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		JsonBack(c, "参数错误", -2, nil)
+		return
+	}
+	msg, loginRespond, ret := userInfoService.SmsLogin(req)
+	JsonBack(c, msg, ret, loginRespond)
+}

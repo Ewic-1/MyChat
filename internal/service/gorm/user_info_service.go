@@ -51,15 +51,15 @@ func (u *UserInfoService) Login(loginReq request.LoginRequest) (message string, 
 	}
 
 	if !passwordutil.CheckPassword(user.Password, loginReq.Password) {
-		zlog.Error("wrong password")
-		return "wrong password", nil, -2
+		zlog.Error("密码错误")
+		return "密码错误", nil, -2
 	}
 
 	// 登录成功后签发 access + refresh，前端后续通过 refresh 自动续期。
 	tokenPair, err := jwtutil.GenerateTokenPair(user.Uuid)
 	if err != nil {
 		zlog.Error(err.Error())
-		return "generate token failed", nil, -1
+		return "获取token失败", nil, -1
 	}
 
 	data = &respond.LoginRespond{
@@ -157,4 +157,58 @@ func (u *UserInfoService) Register(req request.RegisterRequest) (string, *respon
 	rep.CreatedAt = fmt.Sprintf("%d.%d.%d", year, month, day)
 
 	return m, rep, 0
+}
+
+func (u *UserInfoService) SmsLogin(req request.SmsLoginRequest) (msg string, rep *respond.LoginRespond, ret int) {
+	// redis中获取验证码进行比对
+	codeFromRedis, err := redis.GetKey("auth_code_" + req.Telephone)
+	codeFromUser := req.SmsCode
+	if err != nil {
+		zlog.Error(err.Error())
+		msg = "未发送验证码"
+		return msg, nil, -1
+	}
+	if codeFromUser != codeFromRedis {
+		msg = "验证码错误"
+		zlog.Info(msg)
+		return msg, nil, -2
+	} else {
+		// 删除redis中的验证码
+		if err := redis.DelKeyIfExists("auth_code_" + req.Telephone); err != nil {
+			zlog.Error(err.Error())
+			return constants.SYSTEM_ERROR, nil, -1
+		}
+	}
+	// 查询用户
+	msg, user, ret := userInfoDao.GetUserInfoByTelephone(req.Telephone)
+	if ret != 0 {
+		zlog.Error(msg)
+		return constants.SYSTEM_ERROR, nil, ret
+	}
+
+	// 登录成功后签发 access + refresh，前端后续通过 refresh 自动续期。
+	tokenPair, err := jwtutil.GenerateTokenPair(user.Uuid)
+	if err != nil {
+		zlog.Error(err.Error())
+		return "获取token失败", nil, -1
+	}
+
+	var data = &respond.LoginRespond{
+		Uuid:             user.Uuid,
+		Telephone:        user.Telephone,
+		Nickname:         user.Nickname,
+		Email:            user.Email,
+		Avatar:           user.Avatar,
+		Gender:           user.Gender,
+		Birthday:         user.Birthday,
+		Signature:        user.Signature,
+		IsAdmin:          user.IsAdmin,
+		Status:           user.Status,
+		Token:            tokenPair.AccessToken,
+		RefreshToken:     tokenPair.RefreshToken,
+		AccessExpiresAt:  tokenPair.AccessExpiresAt.Unix(),
+		RefreshExpiresAt: tokenPair.RefreshExpiresAt.Unix(),
+	}
+
+	return "login success", data, 0
 }

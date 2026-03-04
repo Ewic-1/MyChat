@@ -4,7 +4,3 @@ type LoginRequest struct {
 	Telephone string `json:"telephone" binding:"required"`
 	Password  string `json:"password" binding:"required"`
 }
-
-type SendSmsCodeRequest struct {
-	Telephone string `json:"telephone" binding:"required"`
-}

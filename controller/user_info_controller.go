@@ -16,6 +16,7 @@ var userInfoService = new(gorm.UserInfoService)
 func Login(c *gin.Context) {
 	var loginReq request.LoginRequest
 	if err := c.ShouldBindJSON(&loginReq); err != nil {
+		zlog.Error(err.Error())
 		JsonBack(c, "参数错误", -2, nil)
 		return
 	}
@@ -36,4 +37,16 @@ func SendSmsCode(c *gin.Context) {
 	}
 	message, ret := userInfoService.SendSmsCode(req.Telephone)
 	JsonBack(c, message, ret, nil)
+}
+
+// Register  注册
+func Register(c *gin.Context) {
+	var req request.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		JsonBack(c, "参数错误", -2, nil)
+		return
+	}
+	message, registerRespond, ret := userInfoService.Register(req)
+	JsonBack(c, message, ret, registerRespond)
 }

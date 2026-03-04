@@ -3,6 +3,7 @@
 import (
 	"errors"
 	"mychat_server/internal/model"
+	"mychat_server/pkg/constants"
 	"mychat_server/pkg/utils/zlog"
 
 	"gorm.io/gorm"
@@ -32,4 +33,32 @@ func (u *UserInfoDao) GetUserInfoByTelephone(telephone string) (message string, 
 	}
 
 	return "query user success", &userInfo, 0
+}
+
+func (u *UserInfoDao) ExistsByTelephone(telephone string) (string, bool, int) {
+	var msg string
+	if DB == nil {
+		msg = "系统错误(DB)"
+		zlog.Error(msg)
+		return msg, false, -1
+	}
+	var user model.UserInfo
+	result := DB.Model(&model.UserInfo{}).Where("telephone = ?", telephone).First(&user)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		msg = "手机号不存在"
+		zlog.Info(msg)
+		return msg, false, 0
+	}
+	msg = "手机号存在"
+	zlog.Info(msg)
+	return msg, true, 0
+}
+
+func (u *UserInfoDao) NewUser(newUser *model.UserInfo) (string, int) {
+	res := DB.Create(newUser)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, -1
+	}
+	return "新用户注册成功", 0
 }

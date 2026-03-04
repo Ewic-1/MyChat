@@ -18,8 +18,8 @@ func VerifyCode(telephone string) (msg string, ret int) {
 	}
 
 	if code != "" {
-		zlog.Info("verification code exists and is not expired")
-		return "verification code exists, please retry later", -2
+		zlog.Info("验证码已存在")
+		return "验证码已存在", -2
 	}
 
 	code = strconv.Itoa(random.GetRandomInt(6))
@@ -30,5 +30,5 @@ func VerifyCode(telephone string) (msg string, ret int) {
 		return constants.SYSTEM_ERROR, -1
 	}
 
-	return "verification code sent", 0
+	return "已发送验证码", 0
 }

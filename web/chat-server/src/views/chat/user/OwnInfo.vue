@@ -24,7 +24,7 @@
           <p class="owner-prefix">生日：{{ userInfo.birthday }}</p>
           <p class="owner-prefix">个性签名：{{ userInfo.signature }}</p>
           <p class="owner-prefix">
-            加入kama chat server的时间：{{ userInfo.created_at }}
+            加入mychat server的时间：{{ userInfo.created_at }}
           </p>
           <div class="owner-opt">
             <p class="owner-prefix">头像：</p>

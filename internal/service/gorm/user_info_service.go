@@ -124,7 +124,7 @@ func (u *UserInfoService) Register(req request.RegisterRequest) (string, *respon
 	newUser.Telephone = req.Telephone
 	newUser.Uuid = "U" + random.GetNowAndLenRandomString(11)
 	newUser.Nickname = req.Nickname
-	newUser.Avatar = ""
+	newUser.Avatar = constants.DEFAULT_AVATAR
 	hashedPassword, err := passwordutil.HashPassword(req.Password)
 	if err != nil {
 		zlog.Error(err.Error())
@@ -211,4 +211,54 @@ func (u *UserInfoService) SmsLogin(req request.SmsLoginRequest) (msg string, rep
 	}
 
 	return "login success", data, 0
+}
+
+func (u *UserInfoService) UpdateUserInfo(req request.UpdateUserInfoRequest) (string, int) {
+	msg, user, ret := userInfoDao.GetUserInfoByUuid(req.Uuid)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+	if req.Nickname != "" {
+		user.Nickname = req.Nickname
+	}
+	if req.Birthday != "" {
+		user.Birthday = req.Birthday
+	}
+	if req.Signature != "" {
+		user.Signature = req.Signature
+	}
+	if req.Avatar != "" {
+		user.Avatar = req.Avatar
+	}
+
+	return userInfoDao.SaveUserInfo(user)
+}
+
+func (u *UserInfoService) GetUserInfo(uuid string) (msg string, rep *respond.GetUserInfoRespond, ret int) {
+	msg, user, ret := userInfoDao.GetUserInfoByUuid(uuid)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, nil, ret
+	}
+
+	rep = &respond.GetUserInfoRespond{
+		Uuid:      user.Uuid,
+		Nickname:  user.Nickname,
+		Telephone: user.Telephone,
+		Avatar:    user.Avatar,
+		Email:     user.Email,
+		Gender:    user.Gender,
+		Birthday:  user.Birthday,
+		Signature: user.Signature,
+		CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
+		IsAdmin:   user.IsAdmin,
+		Status:    user.Status,
+	}
+
+	return "获取用户信息成功", rep, 0
 }

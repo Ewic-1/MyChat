@@ -13,17 +13,15 @@ func notImplemented(c *gin.Context) {
 	})
 }
 
-func UpdateUserInfo(c *gin.Context)  { notImplemented(c) }
 func GetUserInfoList(c *gin.Context) { notImplemented(c) }
 func AbleUsers(c *gin.Context)       { notImplemented(c) }
-func GetUserInfo(c *gin.Context)     { notImplemented(c) }
-func DisableUsers(c *gin.Context)    { notImplemented(c) }
-func DeleteUsers(c *gin.Context)     { notImplemented(c) }
-func SetAdmin(c *gin.Context)        { notImplemented(c) }
 
-func WsLogout(c *gin.Context)                    { notImplemented(c) }
-func CreateGroup(c *gin.Context)                 { notImplemented(c) }
-func LoadMyGroup(c *gin.Context)                 { notImplemented(c) }
+func DisableUsers(c *gin.Context) { notImplemented(c) }
+func DeleteUsers(c *gin.Context)  { notImplemented(c) }
+func SetAdmin(c *gin.Context)     { notImplemented(c) }
+
+func WsLogout(c *gin.Context) { notImplemented(c) }
+
 func CheckGroupAddMode(c *gin.Context)           { notImplemented(c) }
 func EnterGroupDirectly(c *gin.Context)          { notImplemented(c) }
 func LeaveGroup(c *gin.Context)                  { notImplemented(c) }

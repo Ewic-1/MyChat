@@ -68,7 +68,7 @@ export default {
           console.log("WebSocket连接已关闭");
         console.log("连接信令服务器断开");
         };
-        store.state.socket.onerror = () => {
+        store.state.socket.onerror = (error) => {
           console.log("WebSocket连接发生错误");console.log("连接信令服务器失败，错误信息：", error);
         };
         console.log(store.state.socket);

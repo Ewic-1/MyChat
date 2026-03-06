@@ -17,7 +17,7 @@ func Login(c *gin.Context) {
 	var loginReq request.LoginRequest
 	if err := c.ShouldBindJSON(&loginReq); err != nil {
 		zlog.Error(err.Error())
-		JsonBack(c, "参数错误", -2, nil)
+		JsonBack(c, constants.SYSTEM_ERROR, -1, nil)
 		return
 	}
 	message, data, ret := userInfoService.Login(loginReq)
@@ -44,7 +44,7 @@ func Register(c *gin.Context) {
 	var req request.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		zlog.Error(err.Error())
-		JsonBack(c, "参数错误", -2, nil)
+		JsonBack(c, constants.SYSTEM_ERROR, -1, nil)
 		return
 	}
 	message, registerRespond, ret := userInfoService.Register(req)
@@ -56,9 +56,31 @@ func SmsLogin(c *gin.Context) {
 	var req request.SmsLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		zlog.Error(err.Error())
-		JsonBack(c, "参数错误", -2, nil)
+		JsonBack(c, constants.SYSTEM_ERROR, -1, nil)
 		return
 	}
 	msg, loginRespond, ret := userInfoService.SmsLogin(req)
 	JsonBack(c, msg, ret, loginRespond)
+}
+
+func UpdateUserInfo(c *gin.Context) {
+	var req request.UpdateUserInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		JsonBack(c, constants.SYSTEM_ERROR, -1, nil)
+		return
+	}
+	msg, ret := userInfoService.UpdateUserInfo(req)
+	JsonBack(c, msg, ret, nil)
+}
+
+func GetUserInfo(c *gin.Context) {
+	var req request.GetUserInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		JsonBack(c, constants.SYSTEM_ERROR, -1, nil)
+		return
+	}
+	msg, rep, ret := userInfoService.GetUserInfo(req.Uuid)
+	JsonBack(c, msg, ret, rep)
 }

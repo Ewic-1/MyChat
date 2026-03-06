@@ -26,3 +26,13 @@ func (d *GroupInfoDao) GetGroupInfoByOwnerId(id string) (msg string, groupList [
 	ret = 0
 	return
 }
+
+func (d *GroupInfoDao) CheckGroupAddMode(id string) (string, int8, int) {
+	group := model.GroupInfo{}
+	res := DB.First(group, "uuid = ?", id)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, -1, -1
+	}
+	return "加群方式获取成功", group.AddMode, 0
+}

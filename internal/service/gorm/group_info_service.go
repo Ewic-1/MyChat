@@ -87,3 +87,12 @@ func (s *GroupInfoService) LoadMyGroup(ownerId string) (msg string, groupList []
 	}
 	return msg, groupList, ret
 }
+
+func (s *GroupInfoService) CheckGroupAddMode(id string) (msg string, addMode int8, ret int) {
+	msg, addMode, ret = groupInfoDao.CheckGroupAddMode(id)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1, ret
+	}
+	return
+}

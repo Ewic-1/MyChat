@@ -295,7 +295,7 @@ func (g *GroupInfoService) GetGroupInfo(groupId string) (string, *respond.GetGro
 		return msg, nil, ret
 	}
 	rsp := &respond.GetGroupInfoRespond{
-		Uuid:      group.Uuid,s
+		Uuid:      group.Uuid,
 		Name:      group.Name,
 		Notice:    group.Notice,
 		Avatar:    group.Avatar,
@@ -310,4 +310,45 @@ func (g *GroupInfoService) GetGroupInfo(groupId string) (string, *respond.GetGro
 		rsp.IsDeleted = false
 	}
 	return "获取成功", rsp, 0
+}
+
+func (s *GroupInfoService) UpdateGroupInfo(req request.UpdateGroupInfoRequest) (string, int) {
+	groupId := req.Uuid
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	if req.Name != "" {
+		group.Name = req.Name
+	}
+	if req.Notice != "" {
+		group.Notice = req.Notice
+	}
+	if req.Avatar != "" {
+		group.Avatar = req.Avatar
+	}
+	if req.OwnerId != "" {
+		group.OwnerId = req.OwnerId
+	}
+	if req.AddMode != -1 {
+		group.AddMode = req.AddMode
+	}
+	groupInfoDao.SaveGroup(group)
+	// 更新会话列表
+	msg, sessionList, ret := sessionDao.GetSessionByReceiveId(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	for _, session := range sessionList {
+		session.Avatar = group.Avatar
+		session.ReceiveName = group.Name
+		msg, ret = sessionDao.SaveSession(session)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -1
+		}
+	}
+	return "更新成功", 0
 }

@@ -24,10 +24,11 @@ func WsLogout(c *gin.Context) { notImplemented(c) }
 
 // func DismissGroup(c *gin.Context)                { notImplemented(c) }
 // func GetGroupInfo(c *gin.Context)                { notImplemented(c) }
-func GetGroupInfoList(c *gin.Context)            { notImplemented(c) }
-func DeleteGroups(c *gin.Context)                { notImplemented(c) }
-func SetGroupsStatus(c *gin.Context)             { notImplemented(c) }
-func UpdateGroupInfo(c *gin.Context)             { notImplemented(c) }
+func GetGroupInfoList(c *gin.Context) { notImplemented(c) }
+func DeleteGroups(c *gin.Context)     { notImplemented(c) }
+func SetGroupsStatus(c *gin.Context)  { notImplemented(c) }
+
+// func UpdateGroupInfo(c *gin.Context)             { notImplemented(c) }
 func GetGroupMemberList(c *gin.Context)          { notImplemented(c) }
 func RemoveGroupMembers(c *gin.Context)          { notImplemented(c) }
 func OpenSession(c *gin.Context)                 { notImplemented(c) }

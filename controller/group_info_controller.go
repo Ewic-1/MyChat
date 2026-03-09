@@ -99,3 +99,18 @@ func DismissGroup(c *gin.Context) {
 	message, ret := groupInfoService.DismissGroup(req.GroupId)
 	JsonBack(c, message, ret, nil)
 }
+
+// GetGroupInfo 获取群聊详情
+func GetGroupInfo(c *gin.Context) {
+	var req request.GetGroupInfoRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, groupInfo, ret := groupInfoService.GetGroupInfo(req.GroupId)
+	JsonBack(c, message, ret, groupInfo)
+}

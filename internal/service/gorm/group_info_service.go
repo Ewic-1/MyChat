@@ -286,3 +286,28 @@ func (s *GroupInfoService) DismissGroup(groupId string) (string, int) {
 	// 返回
 	return "解散群聊成功", 0
 }
+
+// GetGroupInfo 获取群聊详情
+func (g *GroupInfoService) GetGroupInfo(groupId string) (string, *respond.GetGroupInfoRespond, int) {
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, nil, ret
+	}
+	rsp := &respond.GetGroupInfoRespond{
+		Uuid:      group.Uuid,s
+		Name:      group.Name,
+		Notice:    group.Notice,
+		Avatar:    group.Avatar,
+		MemberCnt: group.MemberCnt,
+		OwnerId:   group.OwnerId,
+		AddMode:   group.AddMode,
+		Status:    group.Status,
+	}
+	if group.DeletedAt.Valid {
+		rsp.IsDeleted = true
+	} else {
+		rsp.IsDeleted = false
+	}
+	return "获取成功", rsp, 0
+}

@@ -361,9 +361,13 @@ func (s *GroupInfoService) GetGroupMemberList(groupId string) (string, []respond
 		return msg, nil, 0
 	}
 	var members []string
-	json.Unmarshal(group.Members, members)
+	err := json.Unmarshal(group.Members, &members)
+	if err != nil {
+		zlog.Error(err.Error())
+		return msg, nil, 0
+	}
 	for _, memberId := range members {
-		msg, user, ret := userInfoDao.GetUserInfoByUuid(memberId)\
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(memberId)
 		if ret != 0 {
 			zlog.Error(msg)
 			return msg, rep, 0
@@ -376,4 +380,80 @@ func (s *GroupInfoService) GetGroupMemberList(groupId string) (string, []respond
 		rep = append(rep, r)
 	}
 	return "获取成员列表成功", rep, 0
+}
+
+func (s *GroupInfoService) RemoveGroupMembers(req request.RemoveGroupMembersRequest) (string, int) {
+	groupId := req.GroupId
+	ownerId := req.OwnerId
+	uuidList := req.UuidList
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	deletedAt := gorm.DeletedAt{
+		Time:  time.Now(),
+		Valid: true,
+	}
+	var members []string
+	err := json.Unmarshal(group.Members, &members)
+	if err != nil {
+		zlog.Error(err.Error())
+		return msg, -1
+	}
+	for _, uuid := range uuidList {
+		if uuid == ownerId {
+			zlog.Error("不能删除群主")
+			continue
+		}
+		for i, memberId := range members {
+			if uuid == memberId {
+				members = append(members[:i], members[i+1:]...)
+			}
+		}
+		group.MemberCnt--
+		// 删除会话
+		msg, sessions, ret := sessionDao.GetSessionByReceiveId(groupId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -1
+		}
+		for _, session := range sessions {
+			session.DeletedAt = deletedAt
+			msg, ret = sessionDao.SaveSession(session)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, -1
+			}
+		}
+		// 删除联系人
+		msg, contacts, ret := contactInfoDao.GetContactByContactId(groupId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -1
+		}
+		for _, contact := range contacts {
+			contact.DeletedAt = deletedAt
+			msg, ret = contactInfoDao.SaveContact(contact)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, -1
+			}
+		}
+		// 删除申请记录
+		msg, contactApplies, ret := contactApplyDao.GetContactApplyByContactId(groupId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -1
+		}
+		for _, contactApply := range contactApplies {
+			contactApply.DeletedAt = deletedAt
+			msg, ret = contactApplyDao.SaveContactApply(contactApply)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, -1
+			}
+		}
+	}
+	return "移除群成员成功", 0
 }

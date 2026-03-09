@@ -144,3 +144,18 @@ func GetGroupMemberList(c *gin.Context) {
 	message, groupMemberList, ret := groupInfoService.GetGroupMemberList(req.GroupId)
 	JsonBack(c, message, ret, groupMemberList)
 }
+
+// RemoveGroupMembers 移除群聊成员
+func RemoveGroupMembers(c *gin.Context) {
+	var req request.RemoveGroupMembersRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := groupInfoService.RemoveGroupMembers(req)
+	JsonBack(c, message, ret, nil)
+}

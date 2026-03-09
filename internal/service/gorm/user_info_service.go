@@ -2,7 +2,6 @@
 
 import (
 	"fmt"
-	"mychat_server/internal/dao"
 	"mychat_server/internal/dto/request"
 	"mychat_server/internal/dto/respond"
 	"mychat_server/internal/model"
@@ -19,8 +18,6 @@ import (
 )
 
 type UserInfoService struct{}
-
-var userInfoDao = new(dao.UserInfoDao)
 
 func (u *UserInfoService) checkTelephoneValid(telephone string) bool {
 	pattern := `^1([38][0-9]|14[579]|5[^4]|16[6]|7[1-35-8]|9[189])\d{8}$`

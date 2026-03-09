@@ -45,3 +45,13 @@ func (d *ContactInfoDao) GetContactByContactId(id string) (string, []model.UserC
 	}
 	return "获取成功", contacts, 0
 }
+
+func (d *ContactInfoDao) GetContactByUserId(userId string) (string, []model.UserContact, int) {
+	var contacts []model.UserContact
+	res := DB.Where("user_id = ?", userId).Find(&contacts)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, nil, -1
+	}
+	return "获取成功", contacts, 0
+}

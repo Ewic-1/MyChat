@@ -3,7 +3,6 @@ package gorm
 import (
 	"encoding/json"
 	"fmt"
-	"mychat_server/internal/dao"
 	"mychat_server/internal/dto/request"
 	"mychat_server/internal/dto/respond"
 	"mychat_server/internal/model"
@@ -19,11 +18,6 @@ import (
 )
 
 type GroupInfoService struct{}
-
-var groupInfoDao = new(dao.GroupInfoDao)
-var contactInfoDao = new(dao.ContactInfoDao)
-var sessionDao = new(dao.SessionDao)
-var contactApplyDao = new(dao.ContactApplyDao)
 
 func (s GroupInfoService) CreateGroup(req request.CreateGroupRequest) (msg string, ret int) {
 	group := model.GroupInfo{

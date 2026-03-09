@@ -29,7 +29,7 @@ func DeleteGroups(c *gin.Context)     { notImplemented(c) }
 func SetGroupsStatus(c *gin.Context)  { notImplemented(c) }
 
 // func UpdateGroupInfo(c *gin.Context)             { notImplemented(c) }
-func GetGroupMemberList(c *gin.Context)          { notImplemented(c) }
+// func GetGroupMemberList(c *gin.Context)          { notImplemented(c) }
 func RemoveGroupMembers(c *gin.Context)          { notImplemented(c) }
 func OpenSession(c *gin.Context)                 { notImplemented(c) }
 func GetUserSessionList(c *gin.Context)          { notImplemented(c) }

@@ -129,3 +129,18 @@ func UpdateGroupInfo(c *gin.Context) {
 	message, ret := groupInfoService.UpdateGroupInfo(req)
 	JsonBack(c, message, ret, nil)
 }
+
+// GetGroupMemberList 获取群聊成员列表
+func GetGroupMemberList(c *gin.Context) {
+	var req request.GetGroupMemberListRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, groupMemberList, ret := groupInfoService.GetGroupMemberList(req.GroupId)
+	JsonBack(c, message, ret, groupMemberList)
+}

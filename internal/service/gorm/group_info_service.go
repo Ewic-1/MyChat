@@ -352,3 +352,28 @@ func (s *GroupInfoService) UpdateGroupInfo(req request.UpdateGroupInfoRequest) (
 	}
 	return "更新成功", 0
 }
+
+func (s *GroupInfoService) GetGroupMemberList(groupId string) (string, []respond.GetGroupMemberListRespond, int) {
+	var rep []respond.GetGroupMemberListRespond
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, nil, 0
+	}
+	var members []string
+	json.Unmarshal(group.Members, members)
+	for _, memberId := range members {
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(memberId)\
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, rep, 0
+		}
+		r := respond.GetGroupMemberListRespond{
+			UserId:   memberId,
+			Nickname: user.Nickname,
+			Avatar:   user.Avatar,
+		}
+		rep = append(rep, r)
+	}
+	return "获取成员列表成功", rep, 0
+}

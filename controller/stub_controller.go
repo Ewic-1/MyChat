@@ -22,8 +22,6 @@ func SetAdmin(c *gin.Context)     { notImplemented(c) }
 
 func WsLogout(c *gin.Context) { notImplemented(c) }
 
-func EnterGroupDirectly(c *gin.Context)          { notImplemented(c) }
-func LeaveGroup(c *gin.Context)                  { notImplemented(c) }
 func DismissGroup(c *gin.Context)                { notImplemented(c) }
 func GetGroupInfo(c *gin.Context)                { notImplemented(c) }
 func GetGroupInfoList(c *gin.Context)            { notImplemented(c) }

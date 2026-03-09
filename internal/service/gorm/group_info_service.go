@@ -14,12 +14,16 @@ import (
 	"mychat_server/pkg/utils/random"
 	"mychat_server/pkg/utils/zlog"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type GroupInfoService struct{}
 
 var groupInfoDao = new(dao.GroupInfoDao)
 var contactInfoDao = new(dao.ContactInfoDao)
+var sessionDao = new(dao.SessionDao)
+var contactApplyDao = new(dao.ContactApplyDao)
 
 func (s GroupInfoService) CreateGroup(req request.CreateGroupRequest) (msg string, ret int) {
 	group := model.GroupInfo{
@@ -35,7 +39,7 @@ func (s GroupInfoService) CreateGroup(req request.CreateGroupRequest) (msg strin
 		UpdatedAt: time.Now(),
 	}
 	// 群成员（添加群主一人）
-	members := []string{}
+	var members []string
 	members = append(members, group.OwnerId)
 	var err error
 	group.Members, err = json.Marshal(members)
@@ -95,4 +99,131 @@ func (s *GroupInfoService) CheckGroupAddMode(id string) (msg string, addMode int
 		return msg, -1, ret
 	}
 	return
+}
+
+func (s *GroupInfoService) EnterGroupDirectly(req request.EnterGroupDirectlyRequest) (string, int) {
+	// 根据id获取群
+	uuid := req.OwnerId
+	userId := req.ContactId
+	var group model.GroupInfo
+	msg, group, ret := groupInfoDao.GetGroupInfoById(uuid)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	// 添加用户到群成员列表
+	var members []string
+	if err := json.Unmarshal(group.Members, &members); err != nil {
+		zlog.Error(err.Error())
+		return constants.SYSTEM_ERROR, -1
+	}
+	members = append(members, userId)
+	data, err := json.Marshal(members)
+	if err != nil {
+		zlog.Error(err.Error())
+		return constants.SYSTEM_ERROR, -1
+	}
+	group.Members = data
+
+	// 群人数+1
+	group.MemberCnt++
+
+	// 保存群信息
+	msg, ret = groupInfoDao.SaveGroup(group)
+	if ret != 0 {
+		zlog.Error(msg)
+		return constants.SYSTEM_ERROR, ret
+	}
+
+	// 联系人列表中添加对应信息
+	newContact := model.UserContact{}
+	newContact.UserId = userId
+	newContact.ContactId = uuid
+	newContact.ContactType = contact_type_enum.GROUP
+	newContact.Status = contact_status_enum.NORMAL
+	newContact.CreatedAt = time.Now()
+	newContact.UpdateAt = time.Now()
+	msg, ret = contactInfoDao.CreateContact(newContact)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+
+	// 返回
+	return "加入成功", 0
+}
+
+func (s *GroupInfoService) LeaveGroup(userId string, groupId string) (string, int) {
+	// 从群聊删除用户
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	var members []string
+	err := json.Unmarshal(group.Members, &members)
+	if err != nil {
+		zlog.Error(err.Error())
+		return constants.SYSTEM_ERROR, -1
+	}
+	for i, member := range members {
+		if member == userId {
+			members = append(members[:i], members[i+1:]...)
+			break
+		}
+	}
+	group.Members, err = json.Marshal(members)
+	if err != nil {
+		zlog.Error(err.Error())
+		return constants.SYSTEM_ERROR, -1
+	}
+	group.MemberCnt--
+
+	// delateAt变量方便反复使用
+	delatedAt := gorm.DeletedAt{
+		Time:  time.Now(),
+		Valid: true,
+	}
+
+	// 删除联系人
+	msg, ctt, ret := contactInfoDao.GetContactById(userId, groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	ctt.DeletedAt = delatedAt
+	ctt.Status = contact_status_enum.QUIT_GROUP
+	msg, ret = contactInfoDao.SaveContact(ctt)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+
+	// 删除会话
+	msg, session, ret := sessionDao.GetSessionById(userId, groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	session.DeletedAt = delatedAt
+	msg, ret = sessionDao.SaveSession(session)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+
+	// 删除申请记录
+	msg, contactApply, ret := contactApplyDao.GetContactApplyById(groupId, userId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	contactApply.DeletedAt = delatedAt
+	msg, ret = contactApplyDao.SaveContactApply(contactApply)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	// 返回
+	return "退出群聊成功", 0
 }

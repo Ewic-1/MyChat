@@ -35,3 +35,13 @@ func (d *ContactInfoDao) SaveContact(contact model.UserContact) (string, int) {
 	}
 	return "保存成功", 0
 }
+
+func (d *ContactInfoDao) GetContactByContactId(id string) (string, []model.UserContact, int) {
+	var contacts []model.UserContact
+	res := DB.Where("contact_id = ?", id).Find(&contacts)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, nil, -1
+	}
+	return "获取成功", contacts, 0
+}

@@ -26,3 +26,13 @@ func (d *ContactApplyDao) SaveContactApply(contactApply model.ContactApply) (str
 	}
 	return "保存成功", 0
 }
+
+func (d *ContactApplyDao) GetContactApplyByContactId(id string) (string, []model.ContactApply, int) {
+	var c []model.ContactApply
+	res := DB.Where("contact_id = ?", id).Find(&c)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, c, -1
+	}
+	return "获取成功", c, 0
+}

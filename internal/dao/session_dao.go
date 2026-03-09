@@ -26,3 +26,13 @@ func (d *SessionDao) SaveSession(session model.Session) (string, int) {
 	}
 	return "保存成功", 0
 }
+
+func (d *SessionDao) GetSessionByReceiveId(id string) (string, []model.Session, int) {
+	var sessions []model.Session
+	res := DB.Where("receive_id=?", id).Find(&sessions)
+	if res.Error != nil {
+		zlog.Error(res.Error.Error())
+		return constants.SYSTEM_ERROR, nil, -1
+	}
+	return "获取成功", sessions, 0
+}

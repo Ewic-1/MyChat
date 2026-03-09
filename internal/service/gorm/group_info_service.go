@@ -227,3 +227,62 @@ func (s *GroupInfoService) LeaveGroup(userId string, groupId string) (string, in
 	// 返回
 	return "退出群聊成功", 0
 }
+
+func (s *GroupInfoService) DismissGroup(groupId string) (string, int) {
+	// 从groupinfo表中删除
+	delatedAt := gorm.DeletedAt{
+		Time:  time.Now(),
+		Valid: true,
+	}
+	msg, group, ret := groupInfoDao.GetGroupInfoById(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	group.DeletedAt = delatedAt
+	msg, ret = groupInfoDao.SaveGroup(group)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	// 从session列表中删除
+	msg, sessions, ret := sessionDao.GetSessionByReceiveId(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	for _, session := range sessions {
+		session.DeletedAt = delatedAt
+		msg, ret = sessionDao.SaveSession(session)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, ret
+		}
+	}
+	// 从联系人列表中删除
+	msg, contacts, ret := contactInfoDao.GetContactByContactId(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	for _, contact := range contacts {
+		contact.DeletedAt = delatedAt
+		msg, ret = contactInfoDao.SaveContact(contact)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, ret
+		}
+	}
+	// 删除所有申请该群聊的申请记录
+	msg, contactApplies, ret := contactApplyDao.GetContactApplyByContactId(groupId)
+	for _, contactApply := range contactApplies {
+		contactApply.DeletedAt = delatedAt
+		msg, ret = contactApplyDao.SaveContactApply(contactApply)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, ret
+		}
+	}
+	// 返回
+	return "解散群聊成功", 0
+}

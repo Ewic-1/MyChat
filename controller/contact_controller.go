@@ -25,3 +25,18 @@ func GetUserList(c *gin.Context) {
 	message, userList, ret := contactService.GetUserList(myUserListReq.OwnerId)
 	JsonBack(c, message, ret, userList)
 }
+
+// LoadMyJoinedGroup 获取我加入的群聊
+func LoadMyJoinedGroup(c *gin.Context) {
+	var loadMyJoinedGroupReq request.OwnlistRequest
+	if err := c.BindJSON(&loadMyJoinedGroupReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, groupList, ret := contactService.LoadMyJoinedGroup(loadMyJoinedGroupReq.OwnerId)
+	JsonBack(c, message, ret, groupList)
+}

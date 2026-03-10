@@ -38,7 +38,7 @@ func DeleteSession(c *gin.Context)           { notImplemented(c) }
 func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
 
 // func GetUserList(c *gin.Context)                 { notImplemented(c) }
-func LoadMyJoinedGroup(c *gin.Context)           { notImplemented(c) }
+// func LoadMyJoinedGroup(c *gin.Context)           { notImplemented(c) }
 func GetContactInfo(c *gin.Context)              { notImplemented(c) }
 func DeleteContact(c *gin.Context)               { notImplemented(c) }
 func ApplyContact(c *gin.Context)                { notImplemented(c) }

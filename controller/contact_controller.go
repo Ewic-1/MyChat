@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"mychat_server/internal/dto/request"
 	"mychat_server/internal/service/gorm"
 	"mychat_server/pkg/constants"
@@ -39,4 +40,20 @@ func LoadMyJoinedGroup(c *gin.Context) {
 	}
 	message, groupList, ret := contactService.LoadMyJoinedGroup(loadMyJoinedGroupReq.OwnerId)
 	JsonBack(c, message, ret, groupList)
+}
+
+// GetContactInfo 获取联系人信息
+func GetContactInfo(c *gin.Context) {
+	var getContactInfoReq request.GetContactInfoRequest
+	if err := c.BindJSON(&getContactInfoReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	log.Println(getContactInfoReq)
+	message, contactInfo, ret := contactService.GetContactInfo(getContactInfoReq.ContactId)
+	JsonBack(c, message, ret, contactInfo)
 }

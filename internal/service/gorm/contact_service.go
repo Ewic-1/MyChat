@@ -5,6 +5,8 @@ import (
 	"mychat_server/internal/dto/respond"
 	"mychat_server/pkg/constants"
 	"mychat_server/pkg/enum/contact/contact_type_enum"
+	"mychat_server/pkg/enum/group_info/group_status_enum"
+	"mychat_server/pkg/enum/user_info/user_status_enum"
 	"mychat_server/pkg/utils/zlog"
 )
 
@@ -84,4 +86,48 @@ func (s *ContactService) LoadMyJoinedGroup(id string) (string, []respond.LoadMyJ
 		})
 	}
 	return "获取加入群列表成功", rep, 0
+}
+
+func (s *ContactService) GetContactInfo(contactId string) (string, respond.GetContactInfoRespond, int) {
+	if contactId[0] == 'G' {
+		msg, group, ret := groupInfoDao.GetGroupInfoById(contactId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, respond.GetContactInfoRespond{}, -1
+		}
+		if group.Status == group_status_enum.DISABLE {
+			zlog.Info("群聊已被禁用")
+			return "群聊已被禁用", respond.GetContactInfoRespond{}, -2
+		}
+		return "获取联系人信息成功", respond.GetContactInfoRespond{
+			ContactId:        group.Uuid,
+			ContactName:      group.Name,
+			ContactAvatar:    group.Avatar,
+			ContactNotice:    group.Notice,
+			ContactAddMode:   group.AddMode,
+			ContactMembers:   group.Members,
+			ContactMemberCnt: group.MemberCnt,
+			ContactOwnerId:   group.OwnerId,
+		}, 0
+	} else {
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(contactId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, respond.GetContactInfoRespond{}, -1
+		}
+		if user.Status == user_status_enum.DISABLE {
+			zlog.Info("用户已被禁用")
+			return "用户已被禁用", respond.GetContactInfoRespond{}, -2
+		}
+		return "获取联系人信息成功", respond.GetContactInfoRespond{
+			ContactId:        user.Uuid,
+			ContactName:      user.Nickname,
+			ContactAvatar:    user.Avatar,
+			ContactBirthday:  user.Birthday,
+			ContactEmail:     user.Email,
+			ContactPhone:     user.Telephone,
+			ContactGender:    user.Gender,
+			ContactSignature: user.Signature,
+		}, 0
+	}
 }

@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"mychat_server/internal/dto/respond"
 	"mychat_server/pkg/constants"
+	"mychat_server/pkg/enum/contact/contact_status_enum"
 	"mychat_server/pkg/enum/contact/contact_type_enum"
 	"mychat_server/pkg/enum/group_info/group_status_enum"
 	"mychat_server/pkg/enum/user_info/user_status_enum"
 	"mychat_server/pkg/utils/zlog"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type ContactService struct{}
@@ -130,4 +134,64 @@ func (s *ContactService) GetContactInfo(contactId string) (string, respond.GetCo
 			ContactSignature: user.Signature,
 		}, 0
 	}
+}
+
+func (s *ContactService) DeleteContact(id1 string, id2 string) (string, int) {
+	// deletedAt
+	deletedAt := gorm.DeletedAt{
+		Time:  time.Now(),
+		Valid: true,
+	}
+	// contact
+	msg, contact, ret := contactInfoDao.GetContactById(id1, id2)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	contact.Status = contact_status_enum.DELETE
+	contact.DeletedAt = deletedAt
+	contactInfoDao.SaveContact(contact)
+
+	msg, contact, ret = contactInfoDao.GetContactById(id2, id1)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	contact.Status = contact_status_enum.DELETE
+	contact.DeletedAt = deletedAt
+	contactInfoDao.SaveContact(contact)
+	// session
+	msg, session, ret := sessionDao.GetSessionById(id1, id2)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	session.DeletedAt = deletedAt
+	sessionDao.SaveSession(session)
+
+	msg, session, ret = sessionDao.GetSessionById(id2, id1)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	session.DeletedAt = deletedAt
+	sessionDao.SaveSession(session)
+	// apply
+	msg, apply, ret := contactApplyDao.GetContactApplyById(id1, id2)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	apply.DeletedAt = deletedAt
+	contactApplyDao.SaveContactApply(apply)
+
+	msg, apply, ret = contactApplyDao.GetContactApplyById(id2, id1)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, ret
+	}
+	apply.DeletedAt = deletedAt
+	contactApplyDao.SaveContactApply(apply)
+
+	return "删除联系人成功", 0
 }

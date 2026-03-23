@@ -318,7 +318,7 @@ func (s *ContactService) PassContactApply(ownerId string, contactId string) (str
 		msg, user, ret := userInfoDao.GetUserInfoByUuid(contactId)
 		if ret != 0 {
 			zlog.Error(msg)
-			return msg, -2
+			return msg, -1
 		}
 		if user.Status == user_status_enum.DISABLE {
 			zlog.Info("用户被禁用")
@@ -350,7 +350,7 @@ func (s *ContactService) PassContactApply(ownerId string, contactId string) (str
 		msg, group, ret := groupInfoDao.GetGroupInfoById(ownerId)
 		if ret != 0 {
 			zlog.Error(msg)
-			return msg, -2
+			return msg, -1
 		}
 		if group.Status == group_status_enum.DISABLE {
 			zlog.Info("群聊已被禁用")
@@ -369,7 +369,7 @@ func (s *ContactService) PassContactApply(ownerId string, contactId string) (str
 		err := json.Unmarshal(group.Members, members)
 		if err != nil {
 			zlog.Error(err.Error())
-			return msg, -2
+			return msg, -1
 		}
 		members = append(members, contactId)
 		group.Members, _ = json.Marshal(members)
@@ -377,4 +377,38 @@ func (s *ContactService) PassContactApply(ownerId string, contactId string) (str
 		groupInfoDao.SaveGroup(group)
 		return "已通过加群申请", 0
 	}
+}
+
+func (s *ContactService) BlackContact(ownerId string, contactId string) (string, int) {
+	// 拉黑
+	msg, contact1, ret := contactInfoDao.GetContactById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	contact1.Status = contact_status_enum.BLACK
+	contact1.UpdateAt = time.Now()
+	contactInfoDao.SaveContact(contact1)
+	// 被拉黑
+	msg, contact2, ret := contactInfoDao.GetContactById(contactId, ownerId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	contact2.Status = contact_status_enum.BE_BLACK
+	contact2.UpdateAt = time.Now()
+	contactInfoDao.SaveContact(contact2)
+	// 删除会话
+	delatedAt := gorm.DeletedAt{
+		Time:  time.Now(),
+		Valid: true,
+	}
+	msg, session, ret := sessionDao.GetSessionById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	session.DeletedAt = delatedAt
+	sessionDao.SaveSession(session)
+	return "已拉黑联系人", 0
 }

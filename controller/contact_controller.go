@@ -72,3 +72,18 @@ func DeleteContact(c *gin.Context) {
 	message, ret := contactService.DeleteContact(deleteContactReq.OwnerId, deleteContactReq.ContactId)
 	JsonBack(c, message, ret, nil)
 }
+
+// ApplyContact 申请添加联系人
+func ApplyContact(c *gin.Context) {
+	var applyContactReq request.ApplyContactRequest
+	if err := c.BindJSON(&applyContactReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := contactService.ApplyContact(applyContactReq)
+	JsonBack(c, message, ret, nil)
+}

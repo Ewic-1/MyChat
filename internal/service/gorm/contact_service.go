@@ -2,12 +2,17 @@ package gorm
 
 import (
 	"encoding/json"
+	"fmt"
+	"mychat_server/internal/dto/request"
 	"mychat_server/internal/dto/respond"
+	"mychat_server/internal/model"
 	"mychat_server/pkg/constants"
 	"mychat_server/pkg/enum/contact/contact_status_enum"
 	"mychat_server/pkg/enum/contact/contact_type_enum"
+	"mychat_server/pkg/enum/contact_apply/contact_apply_status_enum"
 	"mychat_server/pkg/enum/group_info/group_status_enum"
 	"mychat_server/pkg/enum/user_info/user_status_enum"
+	"mychat_server/pkg/utils/random"
 	"mychat_server/pkg/utils/zlog"
 	"time"
 
@@ -194,4 +199,79 @@ func (s *ContactService) DeleteContact(id1 string, id2 string) (string, int) {
 	contactApplyDao.SaveContactApply(apply)
 
 	return "删除联系人成功", 0
+}
+
+func (s *ContactService) ApplyContact(req request.ApplyContactRequest) (string, int) {
+	// 申请用户
+	if req.ContactId[0] == 'U' {
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(req.ContactId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, ret
+		}
+		if user.Status == user_status_enum.DISABLE {
+			msg = "用户已被禁用"
+			zlog.Error(msg)
+			return msg, -2
+		}
+
+		msg, apply, ret := contactApplyDao.GetContactApplyById(req.OwnerId, req.ContactId)
+		if ret == -1 {
+			zlog.Error(msg)
+			return msg, ret
+		} else if ret == -2 { // 申请不存在
+			apply = model.ContactApply{
+				Uuid:        fmt.Sprintf("A%s", random.GetNowAndLenRandomString(11)),
+				UserId:      req.OwnerId,
+				ContactId:   req.ContactId,
+				ContactType: contact_type_enum.USER,
+				Status:      contact_apply_status_enum.PENDING,
+				Message:     req.Message,
+				LastApplyAt: time.Now(),
+			}
+			msg, ret = contactApplyDao.SaveContactApply(apply)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, ret
+			}
+		}
+		if apply.Status == contact_apply_status_enum.BLACK {
+			msg = "对方已将你拉黑"
+			zlog.Error(msg)
+			return msg, -2
+		}
+	} else if req.ContactId[0] == 'G' {
+		// 申请群聊
+		msg, group, ret := groupInfoDao.GetGroupInfoById(req.ContactId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, ret
+		}
+		if group.Status == group_status_enum.DISABLE {
+			msg = "群聊已被禁用"
+			zlog.Error(msg)
+			return msg, -2
+		}
+		msg, apply, ret := contactApplyDao.GetContactApplyById(req.OwnerId, req.ContactId)
+		if ret == -1 {
+			zlog.Error(msg)
+			return msg, ret
+		} else if ret == -2 { // 申请不存在
+			apply = model.ContactApply{
+				Uuid:        fmt.Sprintf("A%s", random.GetNowAndLenRandomString(11)),
+				UserId:      req.OwnerId,
+				ContactId:   req.ContactId,
+				ContactType: contact_type_enum.GROUP,
+				Status:      contact_apply_status_enum.PENDING,
+				Message:     req.Message,
+				LastApplyAt: time.Now(),
+			}
+			msg, ret = contactApplyDao.SaveContactApply(apply)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, ret
+			}
+		}
+	}
+	return "申请发送成功", 0
 }

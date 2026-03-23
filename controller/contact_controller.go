@@ -102,3 +102,18 @@ func GetNewContactList(c *gin.Context) {
 	message, data, ret := contactService.GetNewContactList(req.OwnerId)
 	JsonBack(c, message, ret, data)
 }
+
+// PassContactApply 通过联系人申请
+func PassContactApply(c *gin.Context) {
+	var passContactApplyReq request.PassContactApplyRequest
+	if err := c.BindJSON(&passContactApplyReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := contactService.PassContactApply(passContactApplyReq.OwnerId, passContactApplyReq.ContactId)
+	JsonBack(c, message, ret, nil)
+}

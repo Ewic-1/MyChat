@@ -43,7 +43,7 @@ func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
 // func DeleteContact(c *gin.Context)               { notImplemented(c) }
 // func ApplyContact(c *gin.Context)                { notImplemented(c) }
 // func GetNewContactList(c *gin.Context)           { notImplemented(c) }
-func PassContactApply(c *gin.Context)            { notImplemented(c) }
+// func PassContactApply(c *gin.Context)            { notImplemented(c) }
 func BlackContact(c *gin.Context)                { notImplemented(c) }
 func CancelBlackContact(c *gin.Context)          { notImplemented(c) }
 func GetAddGroupList(c *gin.Context)             { notImplemented(c) }

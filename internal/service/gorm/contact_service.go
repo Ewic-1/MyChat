@@ -307,3 +307,74 @@ func (s *ContactService) GetNewContactList(ownerId string) (string, []respond.Ne
 	}
 	return "获取成功", rep, 0
 }
+
+func (s *ContactService) PassContactApply(ownerId string, contactId string) (string, int) {
+	msg, contactApply, ret := contactApplyDao.GetContactApplyById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -2
+	}
+	if ownerId[0] == 'U' {
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(contactId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -2
+		}
+		if user.Status == user_status_enum.DISABLE {
+			zlog.Info("用户被禁用")
+			return "用户被禁用", 0
+		}
+		contactApply.Status = contact_apply_status_enum.AGREE
+		contactApplyDao.SaveContactApply(contactApply)
+
+		contact1 := model.UserContact{
+			ContactId:   contactId,
+			UserId:      ownerId,
+			ContactType: contact_type_enum.USER,
+			Status:      contact_status_enum.NORMAL,
+			UpdateAt:    time.Now(),
+			CreatedAt:   time.Now(),
+		}
+		contact2 := model.UserContact{
+			ContactId:   ownerId,
+			UserId:      contactId,
+			ContactType: contact_type_enum.USER,
+			Status:      contact_status_enum.NORMAL,
+			UpdateAt:    time.Now(),
+			CreatedAt:   time.Now(),
+		}
+		contactInfoDao.SaveContact(contact1)
+		contactInfoDao.SaveContact(contact2)
+		return "已添加该联系人", 0
+	} else {
+		msg, group, ret := groupInfoDao.GetGroupInfoById(ownerId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, -2
+		}
+		if group.Status == group_status_enum.DISABLE {
+			zlog.Info("群聊已被禁用")
+			return "群聊已被禁用", 0
+		}
+		contact := model.UserContact{
+			ContactId:   contactId,
+			UserId:      ownerId,
+			ContactType: contact_type_enum.GROUP,
+			Status:      contact_status_enum.NORMAL,
+			UpdateAt:    time.Now(),
+			CreatedAt:   time.Now(),
+		}
+		contactInfoDao.SaveContact(contact)
+		members := []string{}
+		err := json.Unmarshal(group.Members, members)
+		if err != nil {
+			zlog.Error(err.Error())
+			return msg, -2
+		}
+		members = append(members, contactId)
+		group.Members, _ = json.Marshal(members)
+		group.MemberCnt++
+		groupInfoDao.SaveGroup(group)
+		return "已通过加群申请", 0
+	}
+}

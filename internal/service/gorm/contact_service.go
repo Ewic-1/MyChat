@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"mychat_server/internal/dto/request"
 	"mychat_server/internal/dto/respond"
@@ -437,6 +438,41 @@ func (s *ContactService) CancelBlackContact(ownerId string, contactId string) (s
 	beBlackContact.Status = contact_status_enum.NORMAL
 	contactInfoDao.SaveContact(blackContact)
 	contactInfoDao.SaveContact(beBlackContact)
-	
+
 	return "已解除拉黑该联系人", 0
+}
+
+func (s *ContactService) GetAddGroupList(groupId string) (string, []respond.AddGroupListRespond, int) {
+	msg, contactApplyList, ret := contactInfoDao.GetContactByContactId(groupId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, nil, ret
+	}
+
+	var rsp []respond.AddGroupListRespond
+	for _, contactApply := range contactApplyList {
+		if contactApply.Status != contact_apply_status_enum.PENDING {
+			continue
+		}
+		var message string
+		if contactApply.Message == "" {
+			message = "申请理由：无"
+		} else {
+			message = "申请理由：" + contactApply.Message
+		}
+		newContact := respond.AddGroupListRespond{
+			ContactId: contactApply.Uuid,
+			Message:   message,
+		}
+		msg, user, ret := userInfoDao.GetUserInfoByUuid(contactApply.UserId)
+		if ret != 0 {
+			zlog.Error(msg)
+			return msg, nil, ret
+		}
+		newContact.ContactId = user.Uuid
+		newContact.ContactName = user.Nickname
+		newContact.ContactAvatar = user.Avatar
+		rsp = append(rsp, newContact)
+	}
+	return "获取成功", rsp, 0
 }

@@ -147,3 +147,18 @@ func CancelBlackContact(c *gin.Context) {
 	message, ret := contactService.CancelBlackContact(req.OwnerId, req.ContactId)
 	JsonBack(c, message, ret, nil)
 }
+
+// GetAddGroupList 获取新的群聊申请列表
+func GetAddGroupList(c *gin.Context) {
+	var req request.AddGroupListRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, data, ret := contactService.GetAddGroupList(req.GroupId)
+	JsonBack(c, message, ret, data)
+}

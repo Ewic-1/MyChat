@@ -87,3 +87,18 @@ func ApplyContact(c *gin.Context) {
 	message, ret := contactService.ApplyContact(applyContactReq)
 	JsonBack(c, message, ret, nil)
 }
+
+// GetNewContactList 获取新的联系人申请列表
+func GetNewContactList(c *gin.Context) {
+	var req request.OwnlistRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, data, ret := contactService.GetNewContactList(req.OwnerId)
+	JsonBack(c, message, ret, data)
+}

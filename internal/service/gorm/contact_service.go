@@ -275,3 +275,35 @@ func (s *ContactService) ApplyContact(req request.ApplyContactRequest) (string, 
 	}
 	return "申请发送成功", 0
 }
+
+func (s *ContactService) GetNewContactList(ownerId string) (string, []respond.NewContactListRespond, int) {
+	msg, contactApplyList, ret := contactApplyDao.GetContactApplyByContactId(ownerId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, nil, 0
+	}
+	var rep []respond.NewContactListRespond
+	for _, contactApply := range contactApplyList {
+		if contactApply.Status == contact_apply_status_enum.PENDING {
+			var applyMessage string
+			if contactApply.Message == "" {
+				applyMessage = "申请理由：无"
+			} else {
+				applyMessage = "申请理由：" + contactApply.Message
+			}
+			msg, user, ret := userInfoDao.GetUserInfoByUuid(contactApply.UserId)
+			if ret != 0 {
+				zlog.Error(msg)
+				return msg, nil, -1
+			}
+			var r respond.NewContactListRespond = respond.NewContactListRespond{
+				ContactId:     contactApply.Uuid,
+				Message:       applyMessage,
+				ContactName:   user.Nickname,
+				ContactAvatar: user.Avatar,
+			}
+			rep = append(rep, r)
+		}
+	}
+	return "获取成功", rep, 0
+}

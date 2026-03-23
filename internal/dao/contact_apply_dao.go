@@ -32,7 +32,7 @@ func (d *ContactApplyDao) GetContactApplyByContactId(id string) (string, []model
 	res := DB.Where("contact_id = ?", id).Find(&c)
 	if res.Error != nil {
 		zlog.Error(res.Error.Error())
-		return constants.SYSTEM_ERROR, c, -1
+		return "暂时没有申请", c, -1
 	}
 	return "获取成功", c, 0
 }

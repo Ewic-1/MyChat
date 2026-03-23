@@ -491,3 +491,15 @@ func (s *ContactService) RefuseContactApply(ownerId string, contactId string) (s
 		return "已拒绝该加群申请", 0
 	}
 }
+
+func (s *ContactService) BlackApply(ownerId string, contactId string) (string, int) {
+	msg, contactApply, ret := contactApplyDao.GetContactApplyById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+
+	contactApply.Status = contact_apply_status_enum.BLACK
+	contactApplyDao.SaveContactApply(contactApply)
+	return "已拉黑该申请", 0
+}

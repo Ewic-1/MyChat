@@ -48,7 +48,7 @@ func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
 // func CancelBlackContact(c *gin.Context)          { notImplemented(c) }
 // func GetAddGroupList(c *gin.Context)             { notImplemented(c) }
 // func RefuseContactApply(c *gin.Context)          { notImplemented(c) }
-func BlackApply(c *gin.Context)                  { notImplemented(c) }
+// func BlackApply(c *gin.Context)                  { notImplemented(c) }
 func GetMessageList(c *gin.Context)              { notImplemented(c) }
 func GetGroupMessageList(c *gin.Context)         { notImplemented(c) }
 func UploadAvatar(c *gin.Context)                { notImplemented(c) }

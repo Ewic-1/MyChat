@@ -412,3 +412,31 @@ func (s *ContactService) BlackContact(ownerId string, contactId string) (string,
 	sessionDao.SaveSession(session)
 	return "已拉黑联系人", 0
 }
+
+func (s *ContactService) CancelBlackContact(ownerId string, contactId string) (string, int) {
+	// 因为前端的设定，这里需要判断一下ownerId和contactId是不是有拉黑和被拉黑的状态
+	msg, blackContact, ret := contactInfoDao.GetContactById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	if blackContact.Status != contact_status_enum.BLACK {
+		return "未拉黑该联系人，无需解除拉黑", -2
+	}
+	msg, beBlackContact, ret := contactInfoDao.GetContactById(contactId, ownerId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	if beBlackContact.Status != contact_status_enum.BE_BLACK {
+		return "该联系人未被拉黑，无需解除拉黑", -2
+	}
+
+	// 取消拉黑
+	blackContact.Status = contact_status_enum.NORMAL
+	beBlackContact.Status = contact_status_enum.NORMAL
+	contactInfoDao.SaveContact(blackContact)
+	contactInfoDao.SaveContact(beBlackContact)
+	
+	return "已解除拉黑该联系人", 0
+}

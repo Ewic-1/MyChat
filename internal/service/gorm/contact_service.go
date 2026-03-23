@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mychat_server/internal/dto/request"
 	"mychat_server/internal/dto/respond"
@@ -443,7 +442,7 @@ func (s *ContactService) CancelBlackContact(ownerId string, contactId string) (s
 }
 
 func (s *ContactService) GetAddGroupList(groupId string) (string, []respond.AddGroupListRespond, int) {
-	msg, contactApplyList, ret := contactInfoDao.GetContactByContactId(groupId)
+	msg, contactApplyList, ret := contactApplyDao.GetContactApplyByContactId(groupId)
 	if ret != 0 {
 		zlog.Error(msg)
 		return msg, nil, ret
@@ -475,4 +474,20 @@ func (s *ContactService) GetAddGroupList(groupId string) (string, []respond.AddG
 		rsp = append(rsp, newContact)
 	}
 	return "获取成功", rsp, 0
+}
+
+func (s *ContactService) RefuseContactApply(ownerId string, contactId string) (string, int) {
+	// ownerId 如果是用户的话就是登录用户，如果是群聊的话就是群聊id
+	msg, contactApply, ret := contactApplyDao.GetContactApplyById(ownerId, contactId)
+	if ret != 0 {
+		zlog.Error(msg)
+		return msg, -1
+	}
+	contactApply.Status = contact_apply_status_enum.REFUSE
+	contactApplyDao.SaveContactApply(contactApply)
+	if ownerId[0] == 'U' {
+		return "已拒绝该联系人申请", 0
+	} else {
+		return "已拒绝该加群申请", 0
+	}
 }

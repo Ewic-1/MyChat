@@ -162,3 +162,18 @@ func GetAddGroupList(c *gin.Context) {
 	message, data, ret := contactService.GetAddGroupList(req.GroupId)
 	JsonBack(c, message, ret, data)
 }
+
+// RefuseContactApply 拒绝联系人申请
+func RefuseContactApply(c *gin.Context) {
+	var passContactApplyReq request.PassContactApplyRequest
+	if err := c.BindJSON(&passContactApplyReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := contactService.RefuseContactApply(passContactApplyReq.OwnerId, passContactApplyReq.ContactId)
+	JsonBack(c, message, ret, nil)
+}

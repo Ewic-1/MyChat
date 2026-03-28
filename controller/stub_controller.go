@@ -35,7 +35,7 @@ func SetGroupsStatus(c *gin.Context)  { notImplemented(c) }
 // func GetUserSessionList(c *gin.Context)      { notImplemented(c) }
 // func GetGroupSessionList(c *gin.Context)     { notImplemented(c) }
 // func DeleteSession(c *gin.Context)           { notImplemented(c) }
-func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
+//func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
 
 // func GetUserList(c *gin.Context)                 { notImplemented(c) }
 // func LoadMyJoinedGroup(c *gin.Context)           { notImplemented(c) }
@@ -49,8 +49,8 @@ func CheckOpenSessionAllowed(c *gin.Context) { notImplemented(c) }
 // func GetAddGroupList(c *gin.Context)             { notImplemented(c) }
 // func RefuseContactApply(c *gin.Context)          { notImplemented(c) }
 // func BlackApply(c *gin.Context)                  { notImplemented(c) }
-func GetMessageList(c *gin.Context)              { notImplemented(c) }
-func GetGroupMessageList(c *gin.Context)         { notImplemented(c) }
+// func GetMessageList(c *gin.Context)              { notImplemented(c) }
+// func GetGroupMessageList(c *gin.Context)         { notImplemented(c) }
 func UploadAvatar(c *gin.Context)                { notImplemented(c) }
 func UploadFile(c *gin.Context)                  { notImplemented(c) }
 func GetCurContactListInChatRoom(c *gin.Context) { notImplemented(c) }

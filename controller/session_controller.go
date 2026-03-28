@@ -71,3 +71,18 @@ func DeleteSession(c *gin.Context) {
 	message, ret := sessionService.DeleteSession(deleteSessionReq.OwnerId, deleteSessionReq.SessionId)
 	JsonBack(c, message, ret, nil)
 }
+
+// CheckOpenSessionAllowed 检查是否可以打开会话
+func CheckOpenSessionAllowed(c *gin.Context) {
+	var req request.CreateSessionRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, res, ret := sessionService.CheckOpenSessionAllowed(req.SendId, req.ReceiveId)
+	JsonBack(c, message, ret, res)
+}

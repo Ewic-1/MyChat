@@ -20,7 +20,7 @@ func DisableUsers(c *gin.Context) { notImplemented(c) }
 func DeleteUsers(c *gin.Context)  { notImplemented(c) }
 func SetAdmin(c *gin.Context)     { notImplemented(c) }
 
-func WsLogout(c *gin.Context) { notImplemented(c) }
+//func WsLogout(c *gin.Context) { notImplemented(c) }
 
 // func DismissGroup(c *gin.Context)                { notImplemented(c) }
 // func GetGroupInfo(c *gin.Context)                { notImplemented(c) }
@@ -54,4 +54,5 @@ func SetGroupsStatus(c *gin.Context)  { notImplemented(c) }
 func UploadAvatar(c *gin.Context)                { notImplemented(c) }
 func UploadFile(c *gin.Context)                  { notImplemented(c) }
 func GetCurContactListInChatRoom(c *gin.Context) { notImplemented(c) }
-func WsLogin(c *gin.Context)                     { notImplemented(c) }
+
+//func WsLogin(c *gin.Context)                     { notImplemented(c) }

@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/segmentio/kafka-go v0.4.50
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.48.0

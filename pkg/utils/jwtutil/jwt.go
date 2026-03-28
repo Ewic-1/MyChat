@@ -12,7 +12,7 @@ import (
 	"time"
 
 	myconfig "mychat_server/internal/config"
-	redisservice "mychat_server/internal/service/redis"
+	redisservice "mychat_server/internal/service/myredis"
 	"mychat_server/pkg/utils/zlog"
 
 	"github.com/golang-jwt/jwt/v5"

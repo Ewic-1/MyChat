@@ -1,7 +1,7 @@
 ﻿package sms
 
 import (
-	"mychat_server/internal/service/redis"
+	"mychat_server/internal/service/myredis"
 	"mychat_server/pkg/constants"
 	"mychat_server/pkg/utils/random"
 	"mychat_server/pkg/utils/zlog"
@@ -11,7 +11,7 @@ import (
 
 func VerifyCode(telephone string) (msg string, ret int) {
 	key := "auth_code_" + telephone
-	code, err := redis.GetKey(key)
+	code, err := myredis.GetKey(key)
 	if err != nil {
 		zlog.Error(err.Error())
 		return constants.SYSTEM_ERROR, -1
@@ -25,7 +25,7 @@ func VerifyCode(telephone string) (msg string, ret int) {
 	code = strconv.Itoa(random.GetRandomInt(6))
 	zlog.Info(code)
 
-	if err = redis.SetKeyEx(key, code, time.Duration(constants.REDIS_TIMEOUT)*time.Minute); err != nil {
+	if err = myredis.SetKeyEx(key, code, time.Duration(constants.REDIS_TIMEOUT)*time.Minute); err != nil {
 		zlog.Error(err.Error())
 		return constants.SYSTEM_ERROR, -1
 	}

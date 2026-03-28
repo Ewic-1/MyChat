@@ -366,7 +366,7 @@ func (s *ContactService) PassContactApply(ownerId string, contactId string) (str
 		}
 		contactInfoDao.SaveContact(contact)
 		members := []string{}
-		err := json.Unmarshal(group.Members, members)
+		err := json.Unmarshal(group.Members, &members)
 		if err != nil {
 			zlog.Error(err.Error())
 			return msg, -1

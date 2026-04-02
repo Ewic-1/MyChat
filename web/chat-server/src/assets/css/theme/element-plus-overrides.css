@@ -1,0 +1,53 @@
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: 10px;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3) inset;
+}
+
+.el-menu {
+  border-right: none;
+}
+
+.contactlist-container .el-menu,
+.sessionlist-container .el-menu {
+  background: transparent;
+}
+
+.contactlist-container .el-menu-item,
+.sessionlist-container .el-menu-item {
+  margin: 4px 0;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #edf1f7;
+  color: var(--app-text-primary);
+}
+
+.contactlist-container .el-menu-item:hover,
+.sessionlist-container .el-menu-item:hover {
+  background: #f3f7ff;
+  color: var(--app-brand-strong);
+}
+
+.el-dropdown-menu {
+  border-radius: 10px;
+  box-shadow: var(--app-shadow-1);
+}
+
+.el-button {
+  border-radius: 10px;
+}
+
+.el-popper.is-customized {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.el-popper.is-customized .el-popper__arrow::before {
+  background: rgba(15, 23, 42, 0.92);
+}

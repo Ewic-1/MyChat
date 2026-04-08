@@ -273,7 +273,7 @@ func (s *ContactService) ApplyContact(req request.ApplyContactRequest) (string, 
 			}
 		}
 	}
-	return "申请发送成功", 0
+	return "申请成功", 0
 }
 
 func (s *ContactService) GetNewContactList(ownerId string) (string, []respond.NewContactListRespond, int) {
@@ -297,7 +297,7 @@ func (s *ContactService) GetNewContactList(ownerId string) (string, []respond.Ne
 				return msg, nil, -1
 			}
 			var r respond.NewContactListRespond = respond.NewContactListRespond{
-				ContactId:     contactApply.Uuid,
+				ContactId:     contactApply.UserId,
 				Message:       applyMessage,
 				ContactName:   user.Nickname,
 				ContactAvatar: user.Avatar,

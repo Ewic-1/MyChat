@@ -1,4 +1,4 @@
-﻿package config
+package config
 
 import (
 	"log"
@@ -40,13 +40,17 @@ type LogConfig struct {
 }
 
 type KafkaConfig struct {
-	MessageMode string        `toml:"messageMode"`
-	HostPort    string        `toml:"hostPort"`
-	LoginTopic  string        `toml:"loginTopic"`
-	LogoutTopic string        `toml:"logoutTopic"`
-	ChatTopic   string        `toml:"chatTopic"`
-	Partition   int           `toml:"partition"`
-	Timeout     time.Duration `toml:"timeout"`
+	MessageMode          string        `toml:"messageMode"`
+	HostPort             string        `toml:"hostPort"`
+	LoginTopic           string        `toml:"loginTopic"`
+	LogoutTopic          string        `toml:"logoutTopic"`
+	ChatTopic            string        `toml:"chatTopic"`
+	Partition            int           `toml:"partition"`
+	Timeout              time.Duration `toml:"timeout"`
+	ChannelQueueSize     int           `toml:"channelQueueSize"`
+	HighWatermarkRatio   float64       `toml:"highWatermarkRatio"`
+	HighWatermarkSeconds int           `toml:"highWatermarkSeconds"`
+	OffloadPercent       int           `toml:"offloadPercent"`
 }
 
 type JWTConfig struct {

@@ -3,8 +3,10 @@ package chat
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"mychat_server/internal/config"
@@ -14,6 +16,17 @@ import (
 	"mychat_server/pkg/enum/contact/contact_status_enum"
 	"mychat_server/pkg/utils/random"
 	"mychat_server/pkg/utils/zlog"
+)
+
+const (
+	messageModeChannel = "channel"
+	messageModeKafka   = "kafka"
+	messageModeHybrid  = "hybrid"
+
+	defaultChannelQueueSize     = 1024
+	defaultHighWatermarkRatio   = 0.8
+	defaultHighWatermarkSeconds = 3
+	defaultOffloadPercent       = 50
 )
 
 func InitRuntime() {
@@ -26,29 +39,77 @@ func StopRuntime() {
 
 func (s *chatServer) InitRuntime() {
 	s.runtimeOnce.Do(func() {
-		mode := strings.ToLower(strings.TrimSpace(config.GetConfig().KafkaConfig.MessageMode))
-		s.kafkaEnabled = mode == "kafka"
-		if !s.kafkaEnabled {
-			zlog.Info("chat runtime started with channel mode")
-			return
+		kafkaConfig := config.GetConfig().KafkaConfig
+		mode := normalizeMessageMode(kafkaConfig.MessageMode)
+
+		s.runtimeCtx, s.runtimeCancel = context.WithCancel(context.Background())
+
+		s.kafkaEnabled = mode == messageModeKafka || mode == messageModeHybrid
+		s.hybridEnabled = mode == messageModeHybrid
+
+		if mode != messageModeKafka {
+			queueSize := normalizeChannelQueueSize(kafkaConfig.ChannelQueueSize)
+			s.dispatchQueue = make(chan wsMessage, queueSize)
+			s.runtimeWg.Add(1)
+			go s.consumeChannelMessages()
+			zlog.Info(fmt.Sprintf("chat channel dispatcher enabled: queue_size=%d", queueSize))
 		}
 
-		mykafka.KafkaService.KafkaInit()
-		go s.consumeKafkaMessages()
-		zlog.Info("chat runtime started with kafka mode")
+		if s.kafkaEnabled {
+			mykafka.KafkaService.KafkaInit()
+			s.runtimeWg.Add(1)
+			go s.consumeKafkaMessages()
+		}
+
+		if s.hybridEnabled {
+			s.highWatermarkRatio = normalizeHighWatermarkRatio(kafkaConfig.HighWatermarkRatio)
+			s.highWatermarkSeconds = normalizeHighWatermarkSeconds(kafkaConfig.HighWatermarkSeconds)
+			s.offloadPercent = normalizeOffloadPercent(kafkaConfig.OffloadPercent)
+
+			s.runtimeWg.Add(1)
+			go s.monitorChannelPressure()
+
+			zlog.Info(fmt.Sprintf("chat hybrid offload enabled: high_water_ratio=%.2f, high_water_seconds=%d, offload_percent=%d",
+				s.highWatermarkRatio,
+				s.highWatermarkSeconds,
+				s.offloadPercent,
+			))
+		}
+
+		zlog.Info("chat runtime started with " + mode + " mode")
 	})
 }
 
 func (s *chatServer) StopRuntime() {
+	if s.runtimeCancel != nil {
+		s.runtimeCancel()
+	}
 	if s.kafkaEnabled {
 		mykafka.KafkaService.KafkaClose()
+	}
+	s.runtimeWg.Wait()
+}
+
+func (s *chatServer) consumeChannelMessages() {
+	defer s.runtimeWg.Done()
+	for {
+		select {
+		case <-s.runtimeCtx.Done():
+			return
+		case msg := <-s.dispatchQueue:
+			s.dispatchMessage(msg)
+		}
 	}
 }
 
 func (s *chatServer) consumeKafkaMessages() {
+	defer s.runtimeWg.Done()
 	for {
-		msg, err := mykafka.KafkaService.ReadChatMessage(context.Background())
+		msg, err := mykafka.KafkaService.ReadChatMessage(s.runtimeCtx)
 		if err != nil {
+			if s.runtimeCtx.Err() != nil || errors.Is(err, context.Canceled) {
+				return
+			}
 			zlog.Error("read kafka chat message failed: " + err.Error())
 			time.Sleep(500 * time.Millisecond)
 			continue
@@ -84,22 +145,165 @@ func (s *chatServer) handleIncomingMessage(clientId string, req request.ChatMess
 	}
 
 	out := buildWsMessage(message)
-	if s.kafkaEnabled {
-		payload, err := json.Marshal(out)
-		if err != nil {
-			zlog.Error("marshal kafka message failed: " + err.Error())
-			s.dispatchMessage(out)
+	s.routeMessage(out)
+}
+
+func (s *chatServer) routeMessage(message wsMessage) {
+	if s.shouldOffloadToKafka() {
+		if err := s.publishByKafka(message); err == nil {
 			return
 		}
-		if err := mykafka.KafkaService.PublishChatMessage(out.ReceiveId, payload); err != nil {
-			zlog.Error("publish kafka message failed: " + err.Error())
-			s.dispatchMessage(out)
-			return
+	}
+
+	if s.dispatchQueue == nil {
+		if s.kafkaEnabled {
+			if err := s.publishByKafka(message); err == nil {
+				return
+			}
 		}
+		s.dispatchMessage(message)
 		return
 	}
 
-	s.dispatchMessage(out)
+	select {
+	case s.dispatchQueue <- message:
+		return
+	default:
+		if s.kafkaEnabled {
+			if err := s.publishByKafka(message); err == nil {
+				zlog.Warn("channel queue full, fallback to kafka")
+				return
+			}
+		}
+		s.dispatchMessage(message)
+	}
+}
+
+func (s *chatServer) publishByKafka(message wsMessage) error {
+	payload, err := json.Marshal(message)
+	if err != nil {
+		zlog.Error("marshal kafka message failed: " + err.Error())
+		return err
+	}
+
+	if err := mykafka.KafkaService.PublishChatMessage(message.ReceiveId, payload); err != nil {
+		zlog.Error("publish kafka message failed: " + err.Error())
+		return err
+	}
+	return nil
+}
+
+func (s *chatServer) monitorChannelPressure() {
+	defer s.runtimeWg.Done()
+
+	if s.dispatchQueue == nil {
+		return
+	}
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	highWatermarkSize := calculateHighWatermarkSize(cap(s.dispatchQueue), s.highWatermarkRatio)
+	consecutiveHighSeconds := 0
+
+	for {
+		select {
+		case <-s.runtimeCtx.Done():
+			return
+		case <-ticker.C:
+			queueLen := len(s.dispatchQueue)
+			if queueLen >= highWatermarkSize {
+				consecutiveHighSeconds++
+				if consecutiveHighSeconds >= s.highWatermarkSeconds && !s.isOffloadActive() {
+					atomic.StoreInt32(&s.offloadActive, 1)
+					zlog.Warn(fmt.Sprintf("channel queue high pressure: len=%d cap=%d threshold=%d seconds=%d, enable kafka offload",
+						queueLen,
+						cap(s.dispatchQueue),
+						highWatermarkSize,
+						consecutiveHighSeconds,
+					))
+				}
+				continue
+			}
+
+			consecutiveHighSeconds = 0
+			if s.isOffloadActive() {
+				atomic.StoreInt32(&s.offloadActive, 0)
+				zlog.Info("channel queue pressure recovered, disable kafka offload")
+			}
+		}
+	}
+}
+
+func (s *chatServer) shouldOffloadToKafka() bool {
+	if !s.hybridEnabled || !s.kafkaEnabled || !s.isOffloadActive() {
+		return false
+	}
+
+	if s.offloadPercent <= 0 {
+		return false
+	}
+
+	seq := atomic.AddUint64(&s.offloadSeq, 1)
+	return int((seq-1)%100) < s.offloadPercent
+}
+
+func (s *chatServer) isOffloadActive() bool {
+	return atomic.LoadInt32(&s.offloadActive) == 1
+}
+
+func normalizeMessageMode(rawMode string) string {
+	mode := strings.ToLower(strings.TrimSpace(rawMode))
+	switch mode {
+	case messageModeKafka:
+		return messageModeKafka
+	case messageModeHybrid, "channel_kafka", "channel+kafka", "mix":
+		return messageModeHybrid
+	default:
+		return messageModeChannel
+	}
+}
+
+func normalizeChannelQueueSize(size int) int {
+	if size <= 0 {
+		return defaultChannelQueueSize
+	}
+	return size
+}
+
+func normalizeHighWatermarkRatio(ratio float64) float64 {
+	if ratio <= 0 || ratio >= 1 {
+		return defaultHighWatermarkRatio
+	}
+	return ratio
+}
+
+func normalizeHighWatermarkSeconds(seconds int) int {
+	if seconds <= 0 {
+		return defaultHighWatermarkSeconds
+	}
+	return seconds
+}
+
+func normalizeOffloadPercent(percent int) int {
+	if percent <= 0 {
+		return defaultOffloadPercent
+	}
+	if percent > 100 {
+		return 100
+	}
+	return percent
+}
+
+func calculateHighWatermarkSize(queueSize int, ratio float64) int {
+	highWatermarkSize := int(float64(queueSize) * ratio)
+	if highWatermarkSize <= 0 {
+		return 1
+	}
+	if highWatermarkSize > queueSize {
+		return queueSize
+	}
+	return highWatermarkSize
 }
 
 func buildModelMessage(req request.ChatMessageRequest) model.Message {

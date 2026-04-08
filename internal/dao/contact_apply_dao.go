@@ -1,9 +1,12 @@
 package dao
 
 import (
+	"errors"
 	"mychat_server/internal/model"
 	"mychat_server/pkg/constants"
 	"mychat_server/pkg/utils/zlog"
+
+	"gorm.io/gorm"
 )
 
 type ContactApplyDao struct{}
@@ -11,6 +14,9 @@ type ContactApplyDao struct{}
 func (d *ContactApplyDao) GetContactApplyById(contactId string, userId string) (string, model.ContactApply, int) {
 	var c model.ContactApply
 	res := DB.Where("contact_id = ? and user_id = ?", contactId, userId).First(&c)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return "申请不存在", c, -2
+	}
 	if res.Error != nil {
 		zlog.Error(res.Error.Error())
 		return constants.SYSTEM_ERROR, c, -1

@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
@@ -55,12 +56,22 @@ type wsMessage struct {
 }
 
 type chatServer struct {
-	Clients      map[string]*client
-	clientsMu    sync.RWMutex
-	runtimeOnce  sync.Once
-	contactDao   dao.ContactInfoDao
-	messageDao   dao.MessageDao
-	kafkaEnabled bool
+	Clients              map[string]*client
+	clientsMu            sync.RWMutex
+	runtimeOnce          sync.Once
+	runtimeCtx           context.Context
+	runtimeCancel        context.CancelFunc
+	runtimeWg            sync.WaitGroup
+	dispatchQueue        chan wsMessage
+	contactDao           dao.ContactInfoDao
+	messageDao           dao.MessageDao
+	kafkaEnabled         bool
+	hybridEnabled        bool
+	highWatermarkRatio   float64
+	highWatermarkSeconds int
+	offloadPercent       int
+	offloadActive        int32
+	offloadSeq           uint64
 }
 
 func newChatServer() *chatServer {
